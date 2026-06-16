@@ -92,6 +92,8 @@
 pub mod cli;
 pub mod config;
 mod edge_geometry;
+#[cfg(feature = "cli")]
+pub mod mcp;
 pub mod error;
 pub mod ir;
 pub mod layout;
@@ -117,7 +119,7 @@ pub use layout::{
 };
 pub use parser::{ParseOutput, parse_mermaid};
 #[cfg(feature = "png")]
-pub use render::write_output_png;
+pub use render::{svg_to_png_bytes, write_output_png};
 pub use render::{render_svg, write_output_svg};
 pub use theme::Theme;
 

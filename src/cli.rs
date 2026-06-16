@@ -69,6 +69,18 @@ pub struct Args {
     /// Use fast text metrics (approximate widths) for speed
     #[arg(long = "fastText")]
     pub fast_text_metrics: bool,
+
+    /// Optional subcommand. With none, mmdr renders the input per the
+    /// options above (the default behaviour).
+    #[command(subcommand)]
+    pub command: Option<Command>,
+}
+
+#[derive(clap::Subcommand, Debug)]
+pub enum Command {
+    /// Run a Model Context Protocol (MCP) server over stdio, exposing a
+    /// `render_diagram` tool that renders Mermaid text to SVG or PNG.
+    Mcp,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy)]
@@ -137,6 +149,11 @@ fn parse_aspect_ratio_json(value: &serde_json::Value) -> Option<f32> {
 
 pub fn run() -> Result<()> {
     let args = Args::parse();
+
+    if let Some(Command::Mcp) = args.command {
+        return crate::mcp::serve();
+    }
+
     let mut base_config = load_config(args.config.as_deref())?;
     base_config.render.width = args.width;
     base_config.render.height = args.height;
@@ -534,7 +551,7 @@ sequenceDiagram
     }
 }
 
-fn merge_init_config(mut config: Config, init: serde_json::Value) -> Config {
+pub(crate) fn merge_init_config(mut config: Config, init: serde_json::Value) -> Config {
     if let Some(theme_name) = init.get("theme").and_then(|v| v.as_str()) {
         if theme_name == "modern" {
             config.theme = crate::theme::Theme::modern();

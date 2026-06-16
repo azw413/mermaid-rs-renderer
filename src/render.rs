@@ -5798,6 +5798,20 @@ pub fn write_output_png(
     render_cfg: &RenderConfig,
     theme: &Theme,
 ) -> Result<()> {
+    let bytes = svg_to_png_bytes(svg, render_cfg, theme)?;
+    std::fs::write(output, bytes)?;
+    Ok(())
+}
+
+/// Rasterize an SVG string to in-memory PNG bytes, applying the same
+/// aspect-preserving fit and supersampling as [`write_output_png`]. Used by
+/// the MCP server to return rendered images inline without a temp file.
+#[cfg(feature = "png")]
+pub fn svg_to_png_bytes(
+    svg: &str,
+    render_cfg: &RenderConfig,
+    theme: &Theme,
+) -> Result<Vec<u8>> {
     let mut opt = usvg::Options {
         font_family: primary_font(&theme.font_family),
         default_size: usvg::Size::from_wh(render_cfg.width, render_cfg.height)
@@ -5840,8 +5854,8 @@ pub fn write_output_png(
         resvg::tiny_skia::Transform::from_scale(scale, scale),
         &mut pixmap_mut,
     );
-    pixmap.save_png(output)?;
-    Ok(())
+    let bytes = pixmap.encode_png()?;
+    Ok(bytes)
 }
 
 fn escape_xml(input: &str) -> String {
